@@ -99,13 +99,13 @@ public class AccountingApp {
                     displayReport("MONTH_TO_DATE", "");
                     break;
                 case "2":
-                    displayReport("MONTH_TO_DATE", "");
+                    displayReport("PREVIOUS_MONTH", "");
                     break;
                 case "3":
-                    displayReport("MONTH_TO_DATE", "");
+                    displayReport("YEAR_TO_DATE", "");
                     break;
                 case "4":
-                    displayReport("MONTH_TO_DATE", "");
+                    displayReport("PREVIOUS_YEAR", "");
                     break;
                 case "5":
                     String vendor = requiredInput(scanner, "Vendor name: ");
@@ -121,14 +121,14 @@ public class AccountingApp {
     }
 
     private static void displayReport(String reportType, String vendorSearch) {
-        try{
+        try {
             BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/transactions.csv"));
 
             String line;
             LocalDate today = LocalDate.now();
 
-            while((line = reader.readLine()) != null){
-                if (line.startsWith("date|time|description|vendor|amount")){
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("date|time|description|vendor|amount")) {
                     continue;
                 }
 
@@ -140,12 +140,28 @@ public class AccountingApp {
                 String vendor = parts[3];
                 double amount = Double.parseDouble(parts[4]);
 
-                boolean shouldDisplay = false;
+                boolean shouldDisplay = switch (reportType) {
+                    case "MONTH_TO_DATE" -> date.getMonth() == today.getMonth()
+                            && date.getYear() == today.getYear();
+                    case "PREVIOUS_MONTH" -> {
+                        LocalDate previousMonth = today.minusMonths(1);
+                        yield date.getMonth() == previousMonth.getMonth()
+                                && date.getYear() == previousMonth.getYear();
+                    }
+                    case "YEAR_TO_DATE" -> date.getYear() == today.getYear();
+                    case "PREVIOUS_YEAR" -> date.getYear() == today.minusYears(1).getYear();
+                    case "VENDOR" -> vendor.equalsIgnoreCase(vendorSearch);
+                    default -> false;
+                };
 
-
+                if (shouldDisplay) {
+                    System.out.printf("%s | %s | %s |%s | %.2f%n ", date, time, description, vendor, amount);
+                }
             }
+            reader.close();
+            }catch (IOException e){
+            System.err.println("Could not read transaction file");
         }
-
 
 
     }
