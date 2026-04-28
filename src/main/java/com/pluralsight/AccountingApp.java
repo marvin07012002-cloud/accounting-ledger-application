@@ -41,10 +41,11 @@ public class AccountingApp {
 
         }
     }
-        //Here are all the methods for the program
+
+    //Here are all the methods for the program
     private static void showLedgerScreen(Scanner scanner) {
 
-        while(true){
+        while (true) {
             System.out.println("""
                     Ledger
                     A) All
@@ -56,20 +57,20 @@ public class AccountingApp {
 
             String choice = scanner.nextLine().trim().toUpperCase();
 
-            switch (choice){
+            switch (choice) {
                 case "A":
                     displayTransactions("ALL");
                     break;
                 case "D":
                     displayTransactions("DEPOSITS");
                     break;
-                case"P":
+                case "P":
                     displayTransactions("PAYMENTS");
                     break;
-                case"R":
+                case "R":
                     //show reports screen
                     break;
-                case"H":
+                case "H":
                     return;
                 default:
                     System.err.println("Invalid choice");
@@ -78,12 +79,12 @@ public class AccountingApp {
     }
 
     private static void displayTransactions(String filter) {
-        try{
+        try {
             BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/transactions.csv"));
 
             String line;
 
-            while((line = reader.readLine())!= null){
+            while ((line = reader.readLine()) != null) {
 
                 //Have to skip the header
                 if (line.startsWith("date|time|description|vendor|amount")) {
@@ -111,7 +112,7 @@ public class AccountingApp {
             reader.close();
 
 
-            }catch (IOException e){
+        } catch (IOException e) {
             System.err.println("Could not read transaction file");
         }
     }
@@ -148,8 +149,29 @@ public class AccountingApp {
             amount = -Math.abs(amount);
         }
 
-        LocalDate date = LocalDate.now();
-        LocalTime time = LocalTime.now().withNano(0);
+        LocalDate date;
+        LocalTime time;
+        while (true) {
+            System.out.println("Enter date (yyyy-MM-dd) or press Enter for today: ");
+            String input = scanner.nextLine().trim();
+            System.out.println("Enter time (HH:mm:ss) or press enter for current time");
+            String timeInput = scanner.nextLine().trim();
+
+            if (timeInput.isEmpty()) {
+                time = LocalTime.now();
+            } else {
+                time = LocalTime.parse(timeInput);
+            }
+
+            if (input.isEmpty()) {
+                date = LocalDate.now();
+            } else {
+                date = LocalDate.parse(input);
+            }
+
+
+
+        }
 
         Transaction transaction = new Transaction(date, time, description, vendor, amount);
 
