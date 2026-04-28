@@ -121,6 +121,32 @@ public class AccountingApp {
     }
 
     private static void displayReport(String reportType, String vendorSearch) {
+        try{
+            BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/transactions.csv"));
+
+            String line;
+            LocalDate today = LocalDate.now();
+
+            while((line = reader.readLine()) != null){
+                if (line.startsWith("date|time|description|vendor|amount")){
+                    continue;
+                }
+
+                String[] parts = line.split("\\|");
+
+                LocalDate date = LocalDate.parse(parts[0]);
+                String time = parts[1];
+                String description = parts[2];
+                String vendor = parts[3];
+                double amount = Double.parseDouble(parts[4]);
+
+                boolean shouldDisplay = false;
+
+
+            }
+        }
+
+
 
     }
 
