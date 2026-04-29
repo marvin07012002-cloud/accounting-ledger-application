@@ -3,6 +3,7 @@ package com.pluralsight;
 import java.io.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class AccountingApp {
@@ -96,20 +97,18 @@ public class AccountingApp {
 
             switch (choice) {
                 case "1":
-                    displayReport("MONTH_TO_DATE", "");
+                    displayMonthToDate();
                     break;
                 case "2":
-                    displayReport("PREVIOUS_MONTH", "");
+                    displayPreviousMonth();
                     break;
                 case "3":
-                    displayReport("YEAR_TO_DATE", "");
+                    displayYearToDate();
                     break;
                 case "4":
-                    displayReport("PREVIOUS_YEAR", "");
+                    displayPreviousYear();
                     break;
                 case "5":
-                    String vendor = requiredInput(scanner, "Vendor name: ");
-                    displayReport("VENDOR", vendor);
                     break;
                 case "0":
                     return;
@@ -118,6 +117,101 @@ public class AccountingApp {
 
             }
         }
+    }
+
+    private static void displayPreviousMonth() {
+        ArrayList<Transaction> transactionList = loadTransactions();
+        LocalDate today = LocalDate.now();
+        int currentMonth = today.getMonthValue() - 1;
+
+        for (Transaction currentTransaction: transactionList){
+
+        }
+    }
+
+    private static void displayMonthToDate() {
+        ArrayList<Transaction> transactionList = loadTransactions();
+        LocalDate today = LocalDate.now();
+        int currentYear = today.getYear();
+        int currentMonth = today.getMonthValue();
+
+        for (Transaction currentTransaction: transactionList) {
+
+            LocalDate transactionDate = currentTransaction.getDate();
+            int transactionYear = transactionDate.getYear();
+            int transactionMonth = transactionDate.getMonthValue();
+
+            if(transactionYear == currentYear && transactionMonth == currentMonth) {
+                System.out.println(currentTransaction.getDate() + " " + currentTransaction.getTime() + " " + currentTransaction.getDescription());
+            }
+        }
+
+    }
+
+    private static void displayYearToDate() {
+        ArrayList<Transaction> transactionList = loadTransactions();
+        LocalDate today = LocalDate.now();
+        int currentYear = today.getYear();
+
+        for (Transaction currentTransaction: transactionList) {
+            LocalDate transactionDate = currentTransaction.getDate();
+            int transactionYear = transactionDate.getYear();
+
+            if(transactionYear == currentYear) {
+                System.out.println(currentTransaction.getDate() + " " + currentTransaction.getTime() + " " + currentTransaction.getDescription());
+            }
+        }
+
+    }
+
+    private static void displayPreviousYear() {
+        ArrayList<Transaction> transactionList = loadTransactions();
+        LocalDate today = LocalDate.now();
+        int currentYear = today.getYear() - 1;
+
+        for (Transaction currentTransaction: transactionList) {
+            LocalDate transactionDate = currentTransaction.getDate();
+            int transactionYear = transactionDate.getYear();
+
+            if(transactionYear == currentYear) {
+                System.out.println(currentTransaction.getDate() + " " + currentTransaction.getTime() + " " + currentTransaction.getDescription());
+            }
+        }
+
+    }
+
+    public static ArrayList<Transaction> loadTransactions() {
+        ArrayList<Transaction> transactionList = new ArrayList<>();
+
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/transactions.csv"));
+
+            String line;
+            LocalDate today = LocalDate.now();
+
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("date|time|description|vendor|amount")) {
+                    continue;
+                }
+
+                String[] parts = line.split("\\|");
+
+                LocalDate date = LocalDate.parse(parts[0]);
+                LocalTime time = LocalTime.parse(parts[1]);
+                String description = parts[2];
+                String vendor = parts[3];
+                double amount = Double.parseDouble(parts[4]);
+
+                Transaction transaction = new Transaction(date, time, description, vendor, amount);
+                transactionList.add(transaction);
+            }
+        } catch (FileNotFoundException e) {
+            System.err.println("Could not find file");
+        } catch (IOException e) {
+            System.err.println("Problem reading file");
+        }
+
+        return transactionList;
     }
 
     private static void displayReport(String reportType, String vendorSearch) {
@@ -159,7 +253,7 @@ public class AccountingApp {
                 }
             }
             reader.close();
-            }catch (IOException e){
+        } catch (IOException e) {
             System.err.println("Could not read transaction file");
         }
 
@@ -167,41 +261,9 @@ public class AccountingApp {
     }
 
     private static void displayTransactions(String filter) {
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/transactions.csv"));
-
-            String line;
-
-            while ((line = reader.readLine()) != null) {
-
-                //Have to skip the header
-                if (line.startsWith("date|time|description|vendor|amount")) {
-                    continue;
-                }
-
-                String[] parts = line.split("\\|");
-
-                String date = parts[0];
-                String time = parts[1];
-                String description = parts[2];
-                String vendor = parts[3];
-                double amount = Double.parseDouble(parts[4]);
-
-                if (filter.equals("DEPOSITS") && amount < 0) {
-                    continue;
-                }
-                if (filter.equals("PAYMENTS") && amount > 0) {
-                    continue;
-                }
-                System.out.printf("%s | %s | %s | %s | %.2f%n", date, time, description, vendor, amount);
-
-
-            }
-            reader.close();
-
-
-        } catch (IOException e) {
-            System.err.println("Could not read transaction file");
+        ArrayList<Transaction> transactionList = loadTransactions();
+        for (Transaction currentTransaction: transactionList) {
+            System.out.println(currentTransaction.csvString());
         }
     }
 
@@ -270,6 +332,7 @@ public class AccountingApp {
             BufferedWriter writer = new BufferedWriter(new FileWriter("src/main/resources/transactions.csv", true));
 
             writer.write(transaction.csvString());
+
             writer.newLine();
 
             writer.close();
@@ -297,6 +360,7 @@ public class AccountingApp {
         }
     }
 
+    // this for the header in the transactions file
     private static void createFileHeader() {
         try {
             File file = new File("src/main/resources/transactions.csv");
@@ -314,6 +378,7 @@ public class AccountingApp {
         }
 
     }
+
 }
 
 
