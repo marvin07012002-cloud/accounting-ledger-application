@@ -7,11 +7,12 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class AccountingApp {
+    public static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
 
         createFileHeader();// Created a File Header to organize transactions
-        Scanner scanner = new Scanner(System.in);
+
         while (true) {
             System.out.println("""
                     =========================================================================
@@ -33,10 +34,10 @@ public class AccountingApp {
             switch (choice) {
 
                 case "D":
-                    addTransaction(scanner, true);
+                    addTransaction(true);
                     break;
                 case "P":
-                    addTransaction(scanner, false);
+                    addTransaction(false);
                     break;
                 case "L":
                     showLedgerScreen(scanner);
@@ -152,7 +153,7 @@ public class AccountingApp {
             int currentMonth = transactionMonth.getMonthValue() - 1;
 
             if (currentMonth == previusMonth) {
-                System.out.println(currentTransaction.getDate() + " " + currentTransaction.getTime() + " " +currentTransaction.getDescription());
+                System.out.println(currentTransaction.getDate() + " " + currentTransaction.getTime() + " " + currentTransaction.getDescription());
 
             }
 
@@ -208,17 +209,13 @@ public class AccountingApp {
                 System.out.println(currentTransaction.getDate() + " " + currentTransaction.getTime() + " " + currentTransaction.getDescription());
             }
         }
-
     }
 
     public static ArrayList<Transaction> loadTransactions() {
         ArrayList<Transaction> transactionList = new ArrayList<>();
-
         try {
             BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/transactions.csv"));
-
             String line;
-            LocalDate today = LocalDate.now();
 
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("date|time|description|vendor|amount")) {
@@ -245,51 +242,6 @@ public class AccountingApp {
         return transactionList;
     }
 
-    private static void displayReport(String reportType, String vendorSearch) {
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/transactions.csv"));
-
-            String line;
-            LocalDate today = LocalDate.now();
-
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith("date|time|description|vendor|amount")) {
-                    continue;
-                }
-
-                String[] parts = line.split("\\|");
-
-                LocalDate date = LocalDate.parse(parts[0]);
-                String time = parts[1];
-                String description = parts[2];
-                String vendor = parts[3];
-                double amount = Double.parseDouble(parts[4]);
-
-                boolean shouldDisplay = switch (reportType) {
-                    case "MONTH_TO_DATE" -> date.getMonth() == today.getMonth()
-                            && date.getYear() == today.getYear();
-                    case "PREVIOUS_MONTH" -> {
-                        LocalDate previousMonth = today.minusMonths(1);
-                        yield date.getMonth() == previousMonth.getMonth()
-                                && date.getYear() == previousMonth.getYear();
-                    }
-                    case "YEAR_TO_DATE" -> date.getYear() == today.getYear();
-                    case "PREVIOUS_YEAR" -> date.getYear() == today.minusYears(1).getYear();
-                    case "VENDOR" -> vendor.equalsIgnoreCase(vendorSearch);
-                    default -> false;
-                };
-
-                if (shouldDisplay) {
-                    System.out.printf("%s | %s | %s |%s | %.2f%n ", date, time, description, vendor, amount);
-                }
-            }
-            reader.close();
-        } catch (IOException e) {
-            System.err.println("Could not read transaction file");
-        }
-
-
-    }
 
     private static void displayAllTransactions() {
         ArrayList<Transaction> transactionList = loadTransactions();
@@ -310,39 +262,23 @@ public class AccountingApp {
     private static void displayPaymentTransactions() {
         ArrayList<Transaction> transactionList = loadTransactions();
         for (Transaction currentTransaction : transactionList) {
-            if (currentTransaction.getAmount() < 0){
+            if (currentTransaction.getAmount() < 0) {
                 System.out.println(currentTransaction.csvString());
             }
-
         }
     }
 
 
-    private static void addTransaction(Scanner scanner, boolean isDeposit) {
+    private static void addTransaction(boolean isDeposit) {
+        System.out.println("Enter Description: ");
+        String description = scanner.nextLine();
 
-        String description = requiredInput(scanner, "Description: ");
-        String vendor = requiredInput(scanner, "Vendor: ");
+        System.out.println("Enter Vendor: ");
+        String vendor = scanner.nextLine();
 
-        double amount;
-
-        while (true) {
-            System.out.println("Amount: ");
-            String amountInput = scanner.nextLine().trim();
-
-            try {
-                amount = Double.parseDouble(amountInput);
-
-                if (amount * 100 != Math.round(amount * 100)) {
-                    System.err.println("Only 2 decimal places allowed.");
-                    continue;
-                }
-                break;
-            } catch (NumberFormatException e) {
-                System.err.println("Please enter a valid number, like 25.50");
-            }
-
-        }
-
+        System.out.println("Enter Amount: ");
+        String amountInput = scanner.nextLine();
+        double amount = Double.parseDouble(amountInput);
 
         if (isDeposit) {
             amount = Math.abs(amount);
@@ -350,64 +286,25 @@ public class AccountingApp {
             amount = -Math.abs(amount);
         }
 
-        LocalDate date;
-        LocalTime time;
-        while (true) {
-            try {
-                System.out.println("Enter date (yyyy-MM-dd) or press Enter for today: ");
-                String input = scanner.nextLine().trim();
-                System.out.println("Enter time (HH:mm:ss) or press enter for current time");
-                String timeInput = scanner.nextLine().trim();
+        System.out.println("Enter date (yyyy-MM-dd) or press Enter for today: ");
+        String input = scanner.nextLine();
+        LocalDate date = LocalDate.parse(input);
 
-                if (timeInput.isEmpty()) {
-                    time = LocalTime.now().withNano(0);
-                } else {
-                    time = LocalTime.parse(timeInput);
-                }
+        System.out.println("Enter time (HH:mm:ss) or press enter for current time");
+        String timeInput = scanner.nextLine();
+        LocalTime time = LocalTime.parse(timeInput);
 
-                if (input.isEmpty()) {
-                    date = LocalDate.now();
-                } else {
-                    date = LocalDate.parse(input);
-                }
-                break;
-
-            } catch (Exception e) {
-                System.err.println("Invalid date or time. Use yyyy-MM-dd and HH:mm:ss.");
-            }
-        }
 
         Transaction transaction = new Transaction(date, time, description, vendor, amount);
 
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter("src/main/resources/transactions.csv", true));
-
             writer.write(transaction.csvString());
-
             writer.newLine();
-
             writer.close();
-
             System.out.println("Transaction saved!");
-
-
         } catch (IOException e) {
-
             System.err.println("There was a problem saving the transaction.");
-        }
-
-    }
-
-    // requiredInput is a method for defensing coding and avoid empty spaces
-    private static String requiredInput(Scanner scanner, String prompt) {
-        while (true) {
-            System.out.println(prompt);
-            String input = scanner.nextLine().trim();
-
-            if (!input.isEmpty()) {
-                return input;
-            }
-            System.err.println(prompt + "cannot be blank.");
         }
     }
 
@@ -427,9 +324,7 @@ public class AccountingApp {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
     }
-
 }
 
 
