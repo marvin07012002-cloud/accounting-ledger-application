@@ -133,6 +133,7 @@ public class AccountingApp {
                     displayPreviousYear();
                     break;
                 case "5":
+                    searchByVendor();
                     break;
                 case "0":
                     return;
@@ -141,6 +142,24 @@ public class AccountingApp {
 
             }
         }
+    }
+
+    private static void searchByVendor() {
+        ArrayList<Transaction> transactionList = loadTransactions();
+
+        System.out.println("Enter Vendor: ");
+        String input = scanner.nextLine();
+
+        for(Transaction t : transactionList){
+            if (input.equalsIgnoreCase(t.getVendor())){
+                System.out.println(t.csvString());
+                break;
+            }
+        }
+
+
+
+
     }
 
     private static void displayPreviousMonth() {
